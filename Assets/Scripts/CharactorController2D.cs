@@ -8,17 +8,18 @@ public class CharactorController2D : MonoBehaviour
 {
     public float raycastDistance = 0.2f;
     public LayerMask layerMask;
-    public float _slopAngleLimit = 45f;
+    public float slopAngleLimit = 45f;
 
+    //flags
     public bool below;
     public bool above;
     public bool right;
     public bool left;
 
     public GroundType groundType;
-
-    Vector2 _slopNormal;
-    float _slopAngle;
+        
+    private Vector2 _slopNormal;
+    private float _slopAngle;
 
     private Vector2 _moveAmount;
     private Vector2 _currentPosition;
@@ -32,22 +33,22 @@ public class CharactorController2D : MonoBehaviour
     private Vector2[] _raycastPosition = new Vector2[3];
     private RaycastHit2D[] _raycastHits = new RaycastHit2D[3];
 
-    private void Awake()
+    void Awake()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _capsuleCollider = GetComponent<CapsuleCollider2D>();
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
         _lastPosition = _rigidbody.position;
 
         if (_slopAngle != 0 && below)
         {
-            if ((_moveAmount.x > 0f && _slopAngle > 0) || (_moveAmount.y < 0 && _slopAngle < 0))
+            if( (_moveAmount.x > 0f && _slopAngle > 0f) || (_moveAmount.x < 0f && _slopAngle < 0f))
             {
                 _moveAmount.y = -Mathf.Abs(Mathf.Tan(_slopAngle * Mathf.Deg2Rad) * _moveAmount.x);
-            }
+            } 
         }
 
         _currentPosition = _lastPosition + _moveAmount;
@@ -55,20 +56,21 @@ public class CharactorController2D : MonoBehaviour
         _rigidbody.MovePosition(_currentPosition);
 
         _moveAmount = Vector2.zero;
-        if (!_disableGroundCheck) CheckGrounded();
+        if(!_disableGroundCheck) CheckGrounded();
 
         CheckOtherCollision();
-    }
 
+    }
     public void Move(Vector2 movement)
     {
         _moveAmount += movement;
     }
+
     private void CheckOtherCollision()
     {
-        //left
-        RaycastHit2D leftHit = Physics2D.BoxCast(_capsuleCollider.bounds.center, _capsuleCollider.size * 0.7f,
-            0f, Vector2.left, raycastDistance, layerMask);
+        //left check
+        RaycastHit2D leftHit = Physics2D.BoxCast(_capsuleCollider.bounds.center, _capsuleCollider.size*0.7f, 
+                                              0f, Vector2.left, raycastDistance, layerMask);
 
         if (leftHit.collider)
         {
@@ -77,10 +79,11 @@ public class CharactorController2D : MonoBehaviour
         else
         {
             left = false;
-        }       
+        }
 
+        //right check
         RaycastHit2D rightHit = Physics2D.BoxCast(_capsuleCollider.bounds.center, _capsuleCollider.size * 0.7f,
-            0f, Vector2.right, raycastDistance, layerMask);
+                                      0f, Vector2.right, raycastDistance, layerMask);
 
         if (rightHit.collider)
         {
@@ -90,7 +93,7 @@ public class CharactorController2D : MonoBehaviour
         {
             right = false;
         }
-
+        //above check
         RaycastHit2D aboveHit = Physics2D.CapsuleCast(_capsuleCollider.bounds.center, _capsuleCollider.size,
             CapsuleDirection2D.Vertical, 0f, Vector2.up, raycastDistance, layerMask);
 
@@ -100,24 +103,23 @@ public class CharactorController2D : MonoBehaviour
         }
         else
         {
-            above = false;  
+            above = false;
         }
-
-
-    }
+    }  
 
     private void CheckGrounded()
     {
-        RaycastHit2D hit = Physics2D.CapsuleCast(_capsuleCollider.bounds.center, _capsuleCollider.size,
+        RaycastHit2D hit = Physics2D.CapsuleCast(_capsuleCollider.bounds.center, _capsuleCollider.size, 
             CapsuleDirection2D.Vertical, 0f, Vector2.down, raycastDistance, layerMask);
 
         if (hit.collider)
         {
             groundType = DetermineGroundType(hit.collider);
+
             _slopNormal = hit.normal;
             _slopAngle = Vector2.SignedAngle(_slopNormal, Vector2.up);
 
-            if (_slopAngle > _slopAngleLimit || _slopAngle > -_slopAngleLimit)
+            if (_slopAngle > slopAngleLimit || _slopAngle < -slopAngleLimit)
             {
                 below = false;
             }
@@ -135,17 +137,17 @@ public class CharactorController2D : MonoBehaviour
 
     private GroundType DetermineGroundType(Collider2D collider)
     {
-        if (collider.GetComponent<GroundEffacter>())
+        if (collider.GetComponent<GroundEffector>())
         {
-            GroundEffacter groundEffacter = collider.GetComponent<GroundEffacter>();
-            return groundEffacter.groundType;
+            GroundEffector groundEffector = collider.GetComponent<GroundEffector>();
+            return groundEffector.groundType;
         }
         else return GroundType.LevelGeom;
     }
 
     private void DrawDebugRays(Vector2 direction, Color color)
     {
-        for (int i = 0; i < _raycastPosition.Length; i++)
+        for(int i = 0; i < _raycastPosition.Length; i++)
         {
             Debug.DrawRay(_raycastPosition[i], direction * raycastDistance, color);
         }
@@ -155,8 +157,9 @@ public class CharactorController2D : MonoBehaviour
     {
         below = false;
         _disableGroundCheck = true;
-        StartCoroutine("EnableGroundCheck", delayTime);
+        StartCoroutine("EnableGroundCheck",delayTime);
     }
+
     IEnumerator EnableGroundCheck(float delayTime)
     {
         yield return new WaitForSeconds(delayTime);
