@@ -11,10 +11,14 @@ public class CharactorController2D : MonoBehaviour
     public float _slopAngleLimit = 45f;
 
     public bool below;
+    public bool above;
+    public bool right;
+    public bool left;
+
     public GroundType groundType;
 
-    public Vector2 _slopNormal;
-    public float _slopAngle;
+    Vector2 _slopNormal;
+    float _slopAngle;
 
     private Vector2 _moveAmount;
     private Vector2 _currentPosition;
@@ -51,13 +55,55 @@ public class CharactorController2D : MonoBehaviour
         _rigidbody.MovePosition(_currentPosition);
 
         _moveAmount = Vector2.zero;
-
         if (!_disableGroundCheck) CheckGrounded();
+
+        CheckOtherCollision();
     }
 
     public void Move(Vector2 movement)
     {
         _moveAmount += movement;
+    }
+    private void CheckOtherCollision()
+    {
+        //left
+        RaycastHit2D leftHit = Physics2D.BoxCast(_capsuleCollider.bounds.center, _capsuleCollider.size * 0.7f,
+            0f, Vector2.left, raycastDistance, layerMask);
+
+        if (leftHit.collider)
+        {
+            left = true;
+        }
+        else
+        {
+            left = false;
+        }       
+
+        RaycastHit2D rightHit = Physics2D.BoxCast(_capsuleCollider.bounds.center, _capsuleCollider.size * 0.7f,
+            0f, Vector2.right, raycastDistance, layerMask);
+
+        if (rightHit.collider)
+        {
+            right = true;
+        }
+        else
+        {
+            right = false;
+        }
+
+        RaycastHit2D aboveHit = Physics2D.CapsuleCast(_capsuleCollider.bounds.center, _capsuleCollider.size,
+            CapsuleDirection2D.Vertical, 0f, Vector2.up, raycastDistance, layerMask);
+
+        if (aboveHit.collider)
+        {
+            above = true;
+        }
+        else
+        {
+            above = false;  
+        }
+
+
     }
 
     private void CheckGrounded()
